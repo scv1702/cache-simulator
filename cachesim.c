@@ -125,8 +125,7 @@ void write_cache(int addr, int write_data) {
   int new_set_num; 
   struct line *line_ptr;
   time_t t;
-
-  // address = tag + index + block offset
+  
   set = (addr / block_size) % (num_of_sets);
   
   new_set_num = set_size;
@@ -185,8 +184,8 @@ void write_cache(int addr, int write_data) {
 void print_cache(int opt) { 
   int index;
   int set_num;
-  double amac;        /* average memory access cycle */
-  double miss_rate;   /* miss rate */
+  double amac;       
+  double miss_rate;   
 
   struct line *line_ptr;
 
@@ -214,7 +213,7 @@ void print_cache(int opt) {
   }
 
   miss_rate = (double) total_miss / (total_hit + total_miss);
-  amac = 1.0 + miss_rate * MISS_PENALTY;
+  amac = HIT_CYCLE + miss_rate * MISS_PENALTY;
 
   if (opt == 1) {
     printf("\ntotal number of hits: %d\n", total_hit);
@@ -233,32 +232,24 @@ void set_opt(int ac, char *av[]) {
   int param_opt;
   char *param_buf;
 
-  // 옵션 값 설정
   while ((param_opt = getopt(ac, av, "s:b:a:f:")) != -1) {
     switch (param_opt) {
-      // cache size
       case 's':
         param_buf = optarg;
-        // 단위: byte
         cache_size = atoi(++param_buf);
         break;
-      // block size
       case 'b':
         param_buf = optarg;
-        // 단위: byte
         block_size = atoi(++param_buf);
         break;
-      // set size
       case 'a':
         param_buf = optarg;
         set_size = atoi(++param_buf);
         break;
-      // trace 파일 읽기
       case 'f':
         param_buf = optarg;
         trace_fp = fopen(++param_buf, "r");
         break;
-      // 옵션 잘못 입력 시
       case '?':
         printf("parameter error");
         break;
@@ -286,9 +277,6 @@ void run_cache() {
 }
 
 void init_cache() {
-  // int index;
-  // int set_num;
-  // struct line *line_ptr;
   int line;
 
   num_of_sets = cache_size / (block_size * set_size);
@@ -298,14 +286,4 @@ void init_cache() {
   for (line = 0; line < num_of_lines; line++) {
     cache[line].data = (int *) calloc(block_size / 4, sizeof(int));
   }
-
-  /*
-  for (index = 0; index < num_of_sets; index++) {
-    line_ptr = &cache[sizeof(struct line) * (index * set_size)];
-    for (set_num = 0; set_num < set_size; set_num++) {
-      line_ptr += set_num * sizeof(struct line);
-      line_ptr->data = (int *) calloc(block_size / 4, sizeof(int));
-    }
-  }
-  */
 }
