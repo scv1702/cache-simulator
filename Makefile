@@ -1,4 +1,4 @@
 all: cachesim
 
 cachesim: cachesim.c
-	gcc cachesim.c -o cachesim
+	gcc cachesim.c -g -Wall -o cachesim 
