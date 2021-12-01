@@ -94,6 +94,7 @@ void read_cache(int addr) {
 
     for (set_num = 0; set_num < set_size; set_num++) {
       line_ptr = &cache[set * set_size + set_num];
+      
       if (old_time > line_ptr->time) {
         old_time = line_ptr->time;
         old_set_num = set_num;
@@ -110,7 +111,6 @@ void read_cache(int addr) {
     line_ptr->valid = 1;
     line_ptr->tag = addr / num_of_words / num_of_sets;
     line_ptr->time = time(&t);
-    
   } else {
     line_ptr = &cache[set * set_size + new_set_num];
     
@@ -156,7 +156,6 @@ void write_cache(int addr, int write_data) {
     old_time = time(&t);
 
     for (set_num = 0; set_num < set_size; set_num++) {
-
       line_ptr = &cache[set * set_size + set_num];
       
       if (old_time > line_ptr->time) {
