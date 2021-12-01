@@ -61,13 +61,13 @@ int main(int ac, char *av[]) {
 }
 
 void read_cache(int addr) {
-  int set;
-  int set_num;
-  int old_time;
-  int old_set_num;
-  int new_set_num; 
-  struct line *line_ptr;
-  time_t t;
+  int set = 0;
+  int set_num = 0;
+  int old_time = 0;
+  int old_set_num = 0;
+  int new_set_num = 0; 
+  struct line *line_ptr = NULL;
+  time_t t = 0;
 
   set = addr / num_of_words % num_of_sets;
   
@@ -122,16 +122,16 @@ void read_cache(int addr) {
 }
 
 void write_cache(int addr, int write_data) {
-  int set;
-  int set_num;
-  int old_time;
-  int old_set_num;
-  int new_set_num; 
-  struct line *line_ptr;
-  time_t t;
+  int set = 0;
+  int set_num = 0;
+  int old_time = 0;
+  int old_set_num = 0;
+  int new_set_num = 0; 
+  struct line *line_ptr = NULL;
+  time_t t = 0;
   
   set = addr / num_of_words % num_of_sets;
-
+  
   new_set_num = set_size;
 
   for (set_num = 0; set_num < set_size; set_num++) {
@@ -156,7 +156,9 @@ void write_cache(int addr, int write_data) {
     old_time = time(&t);
 
     for (set_num = 0; set_num < set_size; set_num++) {
+
       line_ptr = &cache[set * set_size + set_num];
+      
       if (old_time > line_ptr->time) {
         old_time = line_ptr->time;
         old_set_num = set_num;
