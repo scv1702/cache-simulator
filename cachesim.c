@@ -101,7 +101,7 @@ void read_cache(int addr) {
 
     line_ptr = &cache[set * set_size + old_set_num];
 
-    if (line_ptr->dirty == 0) {
+    if (line_ptr->dirty) {
       memory_access++;
     }
     
@@ -130,7 +130,7 @@ void write_cache(int addr, int write_data) {
   time_t t;
   
   set = addr / num_of_words % num_of_sets;
-  
+
   new_set_num = set_size;
 
   for (set_num = 0; set_num < set_size; set_num++) {
@@ -144,7 +144,7 @@ void write_cache(int addr, int write_data) {
       return ;
     } else if (line_ptr->valid == 0) {
       if (set_num < new_set_num) {
-        new_set_num = set_num;
+        new_set_num = set_num; 
       }
     }
   }
@@ -164,7 +164,7 @@ void write_cache(int addr, int write_data) {
 
     line_ptr = &cache[set * set_size + old_set_num];
     
-    if (line_ptr->dirty == 0) {
+    if (line_ptr->dirty) {
       memory_access++;
     }
     
@@ -178,7 +178,7 @@ void write_cache(int addr, int write_data) {
     
     line_ptr->dirty = 1;
     line_ptr->valid = 1;
-    line_ptr->tag = (addr / block_size) / num_of_sets;
+    line_ptr->tag = addr / num_of_words / num_of_sets;
     (line_ptr->data)[addr % num_of_words] = write_data;
     line_ptr->time = time(&t);
   }
@@ -288,6 +288,6 @@ void init_cache() {
   cache = (struct line *) calloc(num_of_lines, sizeof(struct line));
   
   for (line = 0; line < num_of_lines; line++) {
-    cache[line].data = (int *) calloc(block_size / WORD_SIZE, sizeof(int));
+    cache[line].data = (int *) calloc(num_of_words, sizeof(int));
   }
 }
