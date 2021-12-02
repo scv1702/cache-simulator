@@ -266,14 +266,13 @@ void run_cache() {
   char mode;
   int write_data;
 
-  while (!feof(trace_fp)) {
-    fscanf(trace_fp, "%08x %c", &addr, &mode);
-
+  while (fscanf(trace_fp, "%08x %c", &addr, &mode) != EOF) {
     if (mode == 'W') {
       fscanf(trace_fp, "%d", &write_data);
       op_count++;
       write_cache(addr / BYTE_SIZE, write_data);
     } else {
+      printf("test: %c\n", mode);
       op_count++;
       read_cache(addr / BYTE_SIZE);
     }
