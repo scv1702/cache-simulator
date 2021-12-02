@@ -43,6 +43,7 @@ void print_cache(int);
 void write_cache(int, int);
 void read_cache(int);
 void run_cache();
+void free_cache();
 
 int main(int ac, char *av[]) {
   set_opt(ac, av);
@@ -55,8 +56,7 @@ int main(int ac, char *av[]) {
 
   run_cache();
   
-  free(trace_fp);
-  free(cache);
+  free_cache();
 
   return 0;
 }
@@ -293,4 +293,15 @@ void init_cache() {
   for (line = 0; line < num_of_lines; line++) {
     cache[line].data = (int *) calloc(num_of_words, sizeof(int));
   }
+}
+
+void free_cache() {
+  int line;
+
+  for (line = 0; line < num_of_lines; line++) {
+    free(cache[line].data);
+  }
+
+  free(cache);
+  free(trace_fp);
 }
