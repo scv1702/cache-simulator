@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <time.h>
+#include <limits.h>
 
 #define MISS_PENALTY 200
 #define HIT_CYCLE 1
@@ -23,12 +23,14 @@ int total_dirty;
 
 int memory_access;
 
+int op_count;
+
 struct line {
   int dirty;
   int valid;
   int tag;
   int *data;
-  time_t time;
+  int time;
 };
 
 struct line *cache;
@@ -66,8 +68,7 @@ void read_cache(int addr) {
   int old_set_num = 0;
   int new_set_num = 0; 
   struct line *line_ptr = NULL;
-  time_t t = 0;
-
+  
   set = addr / num_of_words % num_of_sets;
   
   new_set_num = set_size;
@@ -76,7 +77,7 @@ void read_cache(int addr) {
     line_ptr = &cache[set * set_size + set_num];
 
     if (line_ptr->valid == 1 && line_ptr->tag == addr / num_of_words / num_of_sets) {
-      line_ptr->time = time(&t);
+      line_ptr->time = op_count;
       total_hit++;
       return ;
     } else if (line_ptr->valid == 0) {
@@ -89,7 +90,7 @@ void read_cache(int addr) {
   total_miss++;
 
   if (new_set_num == set_size) {
-    old_time = time(&t);
+    old_time = INT_MAX;
 
     for (set_num = 0; set_num < set_size; set_num++) {
       line_ptr = &cache[set * set_size + set_num];
@@ -109,14 +110,14 @@ void read_cache(int addr) {
     line_ptr->dirty = 0;
     line_ptr->valid = 1;
     line_ptr->tag = addr / num_of_words / num_of_sets;
-    line_ptr->time = time(&t);
+    line_ptr->time = op_count;
   } else {
     line_ptr = &cache[set * set_size + new_set_num];
     
     line_ptr->dirty = 0;
     line_ptr->valid = 1;
     line_ptr->tag = addr / num_of_words / num_of_sets;
-    line_ptr->time = time(&t);
+    line_ptr->time = op_count;
   }
 }
 
@@ -127,7 +128,6 @@ void write_cache(int addr, int write_data) {
   int old_set_num = 0;
   int new_set_num = 0; 
   struct line *line_ptr = NULL;
-  time_t t = 0;
   
   set = addr / num_of_words % num_of_sets;
   
@@ -139,7 +139,7 @@ void write_cache(int addr, int write_data) {
     if (line_ptr->valid == 1 && line_ptr->tag == addr / num_of_words / num_of_sets) {
       line_ptr->dirty = 1; 
       (line_ptr->data)[addr % num_of_words] = write_data;
-      line_ptr->time = time(&t);
+      line_ptr->time = op_count;
       total_hit++;
       return ;
     } else if (line_ptr->valid == 0) {
@@ -152,7 +152,7 @@ void write_cache(int addr, int write_data) {
   total_miss++;
 
   if (new_set_num == set_size) {
-    old_time = time(&t);
+    old_time = INT_MAX;
 
     for (set_num = 0; set_num < set_size; set_num++) {
       line_ptr = &cache[set * set_size + set_num];
@@ -173,7 +173,7 @@ void write_cache(int addr, int write_data) {
     line_ptr->valid = 1;
     line_ptr->tag = addr / num_of_words / num_of_sets;
     (line_ptr->data)[addr % num_of_words] = write_data;
-    line_ptr->time = time(&t);
+    line_ptr->time = op_count;
   } else {
     line_ptr = &cache[set * set_size + new_set_num];
     
@@ -181,7 +181,7 @@ void write_cache(int addr, int write_data) {
     line_ptr->valid = 1;
     line_ptr->tag = addr / num_of_words / num_of_sets;
     (line_ptr->data)[addr % num_of_words] = write_data;
-    line_ptr->time = time(&t);
+    line_ptr->time = op_count;
   }
 }
 
@@ -209,7 +209,7 @@ void print_cache(int opt) {
         printf("%.8X ", (line_ptr->data)[i]);
       }
 
-      printf("v: %d d: %d\n", line_ptr->valid, line_ptr->dirty);
+      printf("v: %d d: %d last time: %d\n", line_ptr->valid, line_ptr->dirty, line_ptr->time);
       printf("   ");
     }
     
@@ -271,8 +271,10 @@ void run_cache() {
 
     if (mode == 'W') {
       fscanf(trace_fp, "%d", &write_data);
+      op_count++;
       write_cache(addr / BYTE_SIZE, write_data);
     } else {
+      op_count++;
       read_cache(addr / BYTE_SIZE);
     }
 
