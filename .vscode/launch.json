@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${fileDirname}/${fileBasenameNoExtension}",
-      "args": ["-s=64", "-a=2", "-b=4", "-f=sample3.trc"],
+      "args": ["-s=32", "-a=2", "-b=8", "-f=sample2.trc"],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],
