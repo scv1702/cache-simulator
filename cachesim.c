@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #define MISS_PENALTY 200
 #define HIT_CYCLE 1
@@ -25,6 +26,8 @@ int memory_access;
 
 int op_count;
 
+bool debug_mode = false;
+
 struct line {
   int dirty;
   int valid;
@@ -39,7 +42,7 @@ FILE *trace_fp;
 
 void set_opt(int, char **);
 void init_cache();
-void print_cache(int);
+void print_cache();
 void write_cache(int, int);
 void read_cache(int);
 void run_cache();
@@ -49,10 +52,6 @@ int main(int ac, char *av[]) {
   set_opt(ac, av);
 
   init_cache();
-
-  printf("cache size: %d\nset size: %d\nblock size: %d\n\n", cache_size, set_size, block_size);
-  
-  print_cache(0);
 
   run_cache();
   
@@ -185,9 +184,10 @@ void write_cache(int addr, int write_data) {
   }
 }
 
-void print_cache(int opt) { 
+void print_cache() { 
   int index;
   int set_num;
+  int blank;
   double amac;       
   double miss_rate;   
 
@@ -205,38 +205,47 @@ void print_cache(int opt) {
         total_dirty++;
       }
 
+      if (set_num != 0) {
+        blank = index / 10;
+        printf("    ");
+        for (int i = 0; i < blank; i++) {
+          printf(" ");
+        }
+      }
+
       for (int i = 0; i < num_of_words; i++) {
         printf("%.8X ", (line_ptr->data)[i]);
       }
 
-      printf("v: %d d: %d last time: %d\n", line_ptr->valid, line_ptr->dirty, line_ptr->time);
-      printf("   ");
+      printf("v: %d d: %d", line_ptr->valid, line_ptr->dirty);
+      if (debug_mode == true) {
+        printf(" last time: %d\n", line_ptr->time);
+      } else {
+        printf("\n");
+      }
     }
-    
-    printf("\n");
   }
 
   miss_rate = (double) total_miss / (total_hit + total_miss);
   amac = HIT_CYCLE + miss_rate * MISS_PENALTY;
 
-  if (opt == 1) {
-    printf("\ntotal number of hits: %d\n", total_hit);
-    printf("total number of misses: %d\n", total_miss);
-    printf("miss rate: %.1f%%\n", miss_rate * 100.0);
-    printf("total number of dirty blocks: %d\n", total_dirty);
-    printf("average memory access cyce: %.1f\n", amac);
+  printf("\ntotal number of hits: %d\n", total_hit);
+  printf("total number of misses: %d\n", total_miss);
+  printf("miss rate: %.1f%%\n", miss_rate * 100.0);
+  printf("total number of dirty blocks: %d\n", total_dirty);
+  printf("average memory access cyce: %.1f\n", amac);
+
+  if (debug_mode == true) {
+    total_dirty = 0;
+    printf("\n-------------------------------\n\n");
   }
-
-  total_dirty = 0;
-
-  printf("\n-------------------------------\n\n");
 }
 
 void set_opt(int ac, char *av[]) {
   int param_opt;
   char *param_buf;
 
-  while ((param_opt = getopt(ac, av, "s:b:a:f:")) != -1) {
+  while ((param_opt = getopt(ac, av, "s:b:a:f:g")) != -1) {
     switch (param_opt) {
       case 's':
         param_buf = optarg;
@@ -253,6 +262,9 @@ void set_opt(int ac, char *av[]) {
       case 'f':
         param_buf = optarg;
         trace_fp = fopen(++param_buf, "r");
+        break;
+      case 'g':
+        debug_mode = true;
         break;
       case '?':
         printf("parameter error");
@@ -272,12 +284,17 @@ void run_cache() {
       op_count++;
       write_cache(addr / BYTE_SIZE, write_data);
     } else {
-      printf("test: %c\n", mode);
       op_count++;
       read_cache(addr / BYTE_SIZE);
     }
 
-    print_cache(1);
+    if (debug_mode == true) {
+      print_cache();
+    }
+  }
+
+  if (debug_mode == false) {
+    print_cache();
   }
 }
 
