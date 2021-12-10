@@ -1,3 +1,13 @@
+/*
+ * computer architecture cache simulator programming assignment
+ * date: 10-12-2021 16:10
+ * student code: 2020111854, 2020115012
+ * writer: shin chan-gyu
+ * tester: lee jihyeon 
+ * description: set associative cache simulator
+ * attention: -s={cache size} -a={set size} -b={block size} -f={trace file name}
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -206,11 +216,7 @@ void print_cache() {
       }
 
       if (set_num != 0) {
-        blank = index / 10;
-        printf("    ");
-        for (int i = 0; i < blank; i++) {
-          printf(" ");
-        }
+        printf("   ");
       }
 
       for (int i = 0; i < num_of_words; i++) {
