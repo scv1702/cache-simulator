@@ -2,14 +2,11 @@
 ![License](https://img.shields.io/badge/Licence-MIT-blue.svg)<br>
 This is a set associative cache simulator written in ``C``. Write policy is write-back and it follows LRU replacement strategy for the oldest line.
 
----
 ## What is set associative cache?
 > Set-associative cache is a trade-off between direct-mapped cache and fully associative cache.
 > A set-associative cache can be imagined as a (n*m) matrix. The cache is divided into ‘n’ sets and each set contains ‘m’ cache lines. A memory block is first mapped onto a set and then placed into any cache line of the set.
 > The range of caches from direct-mapped to fully associative is a continuum of levels of set associativity. (A direct-mapped cache is one-way set-associative and a fully associative cache with m cache lines is m-way set-associative.)
 > Many processor caches in today's designs are either direct-mapped, two-way set-associative, or four-way set-associative. - **wikipedia**
-
----
 
 ## How to exeucte
 1. Use make to compile ```cachesim.c```
@@ -27,11 +24,11 @@ make cachesim
 - block size: 4 bytes ~ 256 bytes (power of 2)
 - trace file name: ```file_name.trc```
 
-e.g, For 64 byte cache size, 2 associativity, and ```sample.trc```, You can execute the simulator by 
+e.g, For 64 byte cache size, 2 associativity, and ```sample.trc```, You can execute the simulator by
 ```
 ./cachesim -s=64 -a=2 -b=8 -f=sample.trc
 ```
----
+
 ## How to write trace file?
 You can execute the simulator using the trace file. The trace file is the record of memory accesses. It has the following format.
 ```
@@ -51,11 +48,9 @@ For ```W```, the value to write is shown as the third number. For ```R```, there
 
 One memory access always works at the unit of 1 word.
 
----
 ## Contact
 You can contact me via e-mail (scv1702 at gmail.com).
 
----
 ## License
 
 <img align="right" src="http://opensource.org/trademarks/opensource/OSI-Approved-License-100x137.png">
