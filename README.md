@@ -24,7 +24,7 @@ make cachesim
 - block size: 4 bytes ~ 256 bytes (power of 2)
 - trace file name: ```file_name.trc```
 
-e.g, For 64 byte cache size, 2 associativity, and ```sample.trc```, You can execute the simulator by
+e.g, For 64 bytes cache size, associativity of 2, 8 bytes block size and ```sample.trc```, You can execute the simulator by
 ```
 ./cachesim -s=64 -a=2 -b=8 -f=sample.trc
 ```
