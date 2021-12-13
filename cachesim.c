@@ -206,6 +206,7 @@ void write_cache(int addr, int write_data) {
       write_memory(line_ptr);
     }
     
+    read_memory(addr, line_ptr->data);
     line_ptr->dirty = 1;
     line_ptr->valid = 1;
     line_ptr->tag = ((addr / BYTE_SIZE) / num_of_words) / num_of_sets;
@@ -215,6 +216,7 @@ void write_cache(int addr, int write_data) {
   } else {
     line_ptr = &cache[set * set_size + new_set_num];
     
+    read_memory(addr, line_ptr->data);
     line_ptr->dirty = 1;
     line_ptr->valid = 1;
     line_ptr->tag = ((addr / BYTE_SIZE) / num_of_words) / num_of_sets;
@@ -262,16 +264,13 @@ void print_cache() {
   }
 
   miss_rate = (double) total_miss / (total_hit + total_miss);
-  
-
-  amac = (double) (memory_access * MISS_PENALTY) / (total_hit + total_miss);
+  amac = (double) (memory_access * (MISS_PENALTY + HIT_CYCLE) + total_hit * HIT_CYCLE) / (memory_access);
 
   printf("\ntotal number of hits: %d\n", total_hit);
   printf("total number of misses: %d\n", total_miss);
   printf("miss rate: %.1f%%\n", miss_rate * 100.0);
   printf("total number of dirty blocks: %d\n", total_dirty);
-  // printf("average memory access cycle: %.1f\n", amac);
-  // printf("# of memory access: %d\n", memory_access);
+  printf("average memory access cycle: %.1f\n", amac);
 
   if (debug_mode == true) {
     total_dirty = 0;
