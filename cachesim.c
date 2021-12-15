@@ -382,11 +382,12 @@ void write_memory(struct line* line_ptr) {
   int cell;
   int new_cell;
 
+  memory_access++;
+
   // target_addr에 해당하는 값이 memory에 있는지 탐색
   for (cell = 0; cell < BUFSIZ; cell++) {
     if (memory[cell].valid == 1 && memory[cell].addr == line_ptr->addr) {
       memcpy(memory[cell].data, line_ptr->data, num_of_words * sizeof(int));
-      memory_access++;
       return ;
     } else if (memory[cell].valid == 0) {
       new_cell = cell;
@@ -398,22 +399,20 @@ void write_memory(struct line* line_ptr) {
   memory[new_cell].addr = line_ptr->addr;
   memory[new_cell].valid = 1;
   memcpy(memory[new_cell].data, line_ptr->data, num_of_words * sizeof(int));
-  memory_access++;
 }
 
 void read_memory(int addr, int *data) {
   int cell;
   int target_addr;
-
+  
+  memory_access++;
+  
   target_addr = (addr / BYTE_SIZE) / num_of_words;
 
   for (cell = 0; cell < BUFSIZ; cell++) {
     if (memory[cell].valid == 1 && memory[cell].addr == target_addr) {
       memcpy(data, memory[cell].data, num_of_words * sizeof(int));
-      memory_access++;
       return ;
     }
   }
-
-  memory_access++;
 }
