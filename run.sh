@@ -1,0 +1,10 @@
+./cachesim -s=32 -a=1 -b=4 -f=./case1.single_write.trc
+./cachesim -s=32 -a=1 -b=4 -f=./case2.single_read.trc
+./cachesim -s=32 -a=1 -b=4 -f=./case3.consecutive_write.trc
+./cachesim -s=32 -a=1 -b=8 -f=./case3.consecutive_write.trc
+./cachesim -s=32 -a=1 -b=4 -f=./case4.consecutive_read.trc
+./cachesim -s=32 -a=1 -b=4 -f=./case5.push_and_read.trc
+./cachesim -s=32 -a=2 -b=4 -f=./case5.push_and_read.trc
+./cachesim -s=32 -a=1 -b=4 -f=./case6.complex.trc
+./cachesim -s=32 -a=1 -b=8 -f=./case6.complex.trc
+./cachesim -s=64 -a=2 -b=16 -f=./case6.complex.trc
