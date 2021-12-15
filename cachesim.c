@@ -32,6 +32,7 @@ int total_hit;
 int total_miss;
 int total_dirty;
 
+// for time of line structure to implement LRU policy
 int op_count;
 
 int memory_access;
@@ -39,6 +40,7 @@ int memory_index;
 
 bool debug_mode = false;
 
+// cache line
 struct line {
   int dirty;
   int valid;
@@ -48,6 +50,7 @@ struct line {
   int addr;
 };
 
+// memory cell
 struct cell {
   int addr;
   int valid;
@@ -60,28 +63,33 @@ struct cell *memory;
 FILE *trace_fp;
 
 void set_opt(int, char **);
-void init_cache();
+void init();
 void print_cache();
 void write_cache(int, int);
 void read_cache(int);
 void run_cache();
-void free_cache();
+void freelist();
 
 void read_memory(int, int *);
 void write_memory(struct line *);
 
 int main(int ac, char *av[]) {
+  // set cache, block size and set associativity
   set_opt(ac, av);
 
-  init_cache();
+  // initialize cache and memory
+  init();
 
+  // run cache simulator
   run_cache();
   
-  free_cache();
+  // free cache and memory
+  freelist();
 
   return 0;
 }
 
+// read data from cache
 void read_cache(int addr) {
   int set = 0;
   int set_num = 0;
@@ -90,21 +98,21 @@ void read_cache(int addr) {
   int new_set_num = 0; 
   struct line *line_ptr = NULL;
 
-  // addr의 index bit
+  // index bits of address
   set = ((addr / BYTE_SIZE) / num_of_words) % num_of_sets;
 
   new_set_num = set_size;
 
-  // set 중에서 addr에 해당하는 값을 탐색
+  // search a set to find data of address
   for (set_num = 0; set_num < set_size; set_num++) {
     line_ptr = &cache[set * set_size + set_num];
 
-    // 해당 block의 valid bit가 1이고 tag 값이 같은 경우, hit
+    // if valid bit of line is 1, and tag bits are same with address, hit
     if (line_ptr->valid == 1 && line_ptr->tag == ((addr / BYTE_SIZE) / num_of_words) / num_of_sets) {
       line_ptr->time = op_count;
       total_hit++;
       return ;
-    // 빈 자리 중 가장 낮은 자리를 탐색
+    // if not, find lowest available entry
     } else if (line_ptr->valid == 0) {
       if (set_num < new_set_num) {
         new_set_num = set_num;
@@ -112,15 +120,15 @@ void read_cache(int addr) {
     }
   }
 
-  // set에 addr에 해당하는 값이 없는 경우, miss
+  // if data of address is not cache, miss
   total_miss++;
 
-  // miss handling. memory에서 data를 가져와야 한다.
-  // set에 자리가 없는 경우, 가장 오래된 block을 내보낸 후 해당 자리에 memory에서 가져온 값을 삽입
+  // read data from memory
+  // if there is no free place at set, kick out oldest line (LRU policy)
   if (new_set_num == set_size) {
     old_time = INT_MAX;
 
-    // 가장 오래된 block을 탐색
+    // search oldest line at set
     for (set_num = 0; set_num < set_size; set_num++) {
       line_ptr = &cache[set * set_size + set_num];
       
@@ -132,20 +140,20 @@ void read_cache(int addr) {
 
     line_ptr = &cache[set * set_size + old_set_num];
 
-    // 해당 block의 dirty bit가 1인 경우, memory에 값을 보낸 후 덮어 씌운다.
-    // 그렇지 않으면, 바로 덮어 씌운다.
+    // if dirty bit of oldest line is 1, write to memory (write-back policy)
     if (line_ptr->dirty) {
       write_memory(line_ptr);
     }
   
+    // override oldest line to new line from memory
     line_ptr->dirty = 0;
     line_ptr->valid = 1;
     line_ptr->addr = ((addr / BYTE_SIZE) / num_of_words);
     line_ptr->tag = ((addr / BYTE_SIZE) / num_of_words) / num_of_sets;
     read_memory(addr, line_ptr->data);
     line_ptr->time = op_count;
-  // set에 자리가 남았을 때, 가장 낮은 자리에 삽입
   } else {
+    // if there is free place at set, fetch line from memory to lowest available entry
     line_ptr = &cache[set * set_size + new_set_num];
     
     line_ptr->dirty = 0;
@@ -157,6 +165,7 @@ void read_cache(int addr) {
   }
 }
 
+// write data to cache
 void write_cache(int addr, int write_data) {
   int set = 0;
   int set_num = 0;
@@ -165,20 +174,25 @@ void write_cache(int addr, int write_data) {
   int new_set_num = 0; 
   struct line *line_ptr = NULL;
 
+  // index bits of address
   set = ((addr / BYTE_SIZE) / num_of_words) % num_of_sets;
   
   new_set_num = set_size;
 
+  // search a set to find data of address
   for (set_num = 0; set_num < set_size; set_num++) {
     line_ptr = &cache[set * set_size + set_num];
 
+    // if valid bit of line is 1, and tag bits are same with address, hit
     if (line_ptr->valid == 1 && line_ptr->tag == ((addr / BYTE_SIZE) / num_of_words) / num_of_sets) {
+      // update line to new data
       line_ptr->dirty = 1; 
       (line_ptr->data)[(addr / BYTE_SIZE) % num_of_words] = write_data;
       line_ptr->addr = ((addr / BYTE_SIZE) / num_of_words);
       line_ptr->time = op_count;
       total_hit++;
       return ;
+    // if not, find lowest available entry
     } else if (line_ptr->valid == 0) {
       if (set_num < new_set_num) {
         new_set_num = set_num; 
@@ -186,11 +200,15 @@ void write_cache(int addr, int write_data) {
     }
   }
 
+  // if data of address is not cache, miss
   total_miss++;
 
+  // read data from memory
+  // if there is no free place at set, kick out oldest line (LRU policy)
   if (new_set_num == set_size) {
     old_time = INT_MAX;
 
+    // search oldest line at set
     for (set_num = 0; set_num < set_size; set_num++) {
       line_ptr = &cache[set * set_size + set_num];
       
@@ -202,14 +220,17 @@ void write_cache(int addr, int write_data) {
 
     line_ptr = &cache[set * set_size + old_set_num];
     
+    // if dirty bit of oldest line is 1, write to memory (write-back policy)
     if (line_ptr->dirty) {
       write_memory(line_ptr);
     }
     
+    // if block size is same with word size, we don't need to read line from memory
     if (block_size != WORD_SIZE) {
       read_memory(addr, line_ptr->data);
     }
     
+    // write new data at line
     line_ptr->dirty = 1;
     line_ptr->valid = 1;
     line_ptr->tag = ((addr / BYTE_SIZE) / num_of_words) / num_of_sets;
@@ -217,12 +238,15 @@ void write_cache(int addr, int write_data) {
     line_ptr->addr = ((addr / BYTE_SIZE) / num_of_words);
     line_ptr->time = op_count;
   } else {
+    // if there is free place at set, fetch line to lowest available entry
     line_ptr = &cache[set * set_size + new_set_num];
     
+    // if block size is same with word size, we don't need to read line from memory
     if (block_size != WORD_SIZE) {
       read_memory(addr, line_ptr->data);
     }
 
+    // write new data at line
     line_ptr->dirty = 1;
     line_ptr->valid = 1;
     line_ptr->tag = ((addr / BYTE_SIZE) / num_of_words) / num_of_sets;
@@ -232,6 +256,7 @@ void write_cache(int addr, int write_data) {
   }
 }
 
+// print all value of cache 
 void print_cache() { 
   int index;
   int set_num;
@@ -284,6 +309,7 @@ void print_cache() {
   }
 }
 
+// set cache, block size and set associativity
 void set_opt(int ac, char *av[]) {
   int param_opt;
   char *param_buf;
@@ -316,6 +342,7 @@ void set_opt(int ac, char *av[]) {
   }
 }
 
+// run cache simulator
 void run_cache() {
   int addr;
   char mode;
@@ -347,7 +374,8 @@ void run_cache() {
   }
 }
 
-void init_cache() {
+// initialize cache and memory
+void init() {
   int line;
   int cell;
 
@@ -367,24 +395,31 @@ void init_cache() {
   }
 }
 
-void free_cache() {
+// free cache and memory
+void freelist() {
   int line;
+  int cell;
 
   for (line = 0; line < num_of_lines; line++) {
     free(cache[line].data);
   }
 
+  for (cell = 0; cell < BUFSIZ; cell++) {
+    free(memory[cell].data);
+  }
+
   free(cache);
+  free(memory);
   free(trace_fp);
 }
 
+// write line to memory
 void write_memory(struct line* line_ptr) {
   int cell;
   int new_cell;
 
   memory_access++;
 
-  // target_addr에 해당하는 값이 memory에 있는지 탐색
   for (cell = 0; cell < BUFSIZ; cell++) {
     if (memory[cell].valid == 1 && memory[cell].addr == line_ptr->addr) {
       memcpy(memory[cell].data, line_ptr->data, num_of_words * sizeof(int));
@@ -395,12 +430,12 @@ void write_memory(struct line* line_ptr) {
     }
   }
 
-  // target_addr에 해당하는 값이 memory에 없으면, 사용 가능한 가장 낮은 자리에 삽입
   memory[new_cell].addr = line_ptr->addr;
   memory[new_cell].valid = 1;
   memcpy(memory[new_cell].data, line_ptr->data, num_of_words * sizeof(int));
 }
 
+// read line from memory
 void read_memory(int addr, int *data) {
   int cell;
   int target_addr;
